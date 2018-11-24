@@ -1,0 +1,123 @@
+---
+title: "NLP"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# install.packages(c("ggplot2", "e1071", "caret", "quanteda", "irlba", "randomForest"))
+setwd("d:/valbuz/OneDrive/Coursera2/R/quanteda_examples")
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+spam.raw <- read.csv("spam.csv", stringsAsFactors = FALSE)
+spam.raw <- spam.raw[, 1:2]
+
+names(spam.raw) <- c("label", "text")
+head(spam.raw)
+```
+
+## Check if incomplete values
+
+check if any NA value
+
+```{r }
+length(which(!complete.cases(spam.raw)))
+```
+
+## Explore Data
+
+```{r}
+spam.raw$label <- as.factor(spam.raw$label)
+base::table(spam.raw$label)
+prop.table(base::table(spam.raw$label))
+```
+
+
+### Add length of text
+
+```{r}
+spam.raw$textLength <- nchar(spam.raw$text)
+head(spam.raw)
+summary(spam.raw$textLength)
+```
+
+
+### draw a histogram of label by size
+
+```{r}
+library(ggplot2)
+
+ggplot(spam.raw, aes(x=textLength, fill=label)) +
+  theme_minimal() +
+  geom_histogram( binwidth = 5) +
+  labs(title = "Distribution of text lengths with class labels")
+```
+
+### Split Data in training set and test set
+
+    Use caret package
+    
+Use the caret package
+```{r}
+library(caret)
+# help(package="caret")
+
+set.seed(32984)
+indexes <- createDataPartition(spam.raw$label, times = 1,
+                               p = 0.7, list = FALSE)
+train <- spam.raw[indexes,]
+test <- spam.raw[-indexes,]
+
+table(train$label)
+prop.table(table(train$label))
+table(test$label)
+prop.table(table(test$label))
+```
+
+
+### Text pre-processing
+
+    tokenization
+    lowercase
+    remove stopwords
+    stemming
+
+```{r}
+library(quanteda)
+train.tokens <- tokens(train$text, what = "word",
+                       remove_numbers = TRUE, remove_punct = TRUE,
+                       remove_symbols = TRUE, remove_hyphens = TRUE)
+train$text[357]
+train.tokens[[357]]
+train.tokens <-  tokens_tolower(train.tokens)
+train.tokens[[357]]
+train.tokens <- tokens_select(train.tokens, stopwords(language = "english"),
+                              selection = "remove")
+train.tokens[[357]]
+train.tokens <- tokens_wordstem(train.tokens, language = "english")
+train.tokens[[357]]
+
+```
+
+
+### Create Document Frequency Matrix
+
+```{r}
+train.tokens.dfm <- dfm(train.tokens, tolower = FALSE)
+train.tokens.matrix <- as.matrix(train.tokens.dfm)
+head(train.tokens.matrix[1:6, 1:50])
+
+dim(train.tokens.matrix)
+colnames(train.tokens.matrix)[1:50]
+
+```
+
