@@ -85,7 +85,7 @@ prop.table(table(test$label))
 ```
 
 
-### Text pre-processing
+## Text pre-processing principles
 
     tokenization
     lowercase
@@ -109,6 +109,7 @@ train.tokens[[357]]
 
 ```
 
+## Document Frequency Matrix Model (count of words)
 
 ### Create Document Frequency Matrix
 
@@ -121,8 +122,6 @@ dim(train.tokens.matrix)
 colnames(train.tokens.matrix)[1:50]
 
 ```
-
-### Model
 
 
 ### Prepare one single matrix with label in first column and features in other columns
@@ -144,7 +143,7 @@ names(train.tokens.df) <- make.names(names(train.tokens.df))
 
 ### Train the first model
 
-### Create stratified folds for cross-validation repeated 3 times
+#### Create stratified folds for cross-validation repeated 3 times
 
 ```{r}
 set.seed(48743)
@@ -154,6 +153,7 @@ cv.cntrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, index 
 ```
 
 
+#### Train the model
 
 ```{r}
 
@@ -178,7 +178,6 @@ total.time
 term.frequency <- function (row) {
   row / sum (row)
 }
-train.tokens.tf <- apply(train.tokens.matrix, 1, term.frequency)
 
 
 inverse.doc.freq <- function(col) {
@@ -190,6 +189,8 @@ inverse.doc.freq <- function(col) {
 tf.idf <- function (tf, idf) {
   tf * idf
 }
+
+train.tokens.tf <- apply(train.tokens.matrix, 1, term.frequency)
 
 train.tokens.idf <- apply(train.tokens.matrix, 2, inverse.doc.freq)
 str(train.tokens.idf)
@@ -204,6 +205,7 @@ dim(train.tokens.tfidf)
 
 
 ```
+### Check that there is no degenerative cases
 
 ```{r}
 incomplete.cases <- which(!complete.cases(train.tokens.tfidf))
@@ -216,6 +218,152 @@ length(which(!complete.cases(train.tokens.tfidf)))
 ```
 
 
-### Check that there is no degenerative cases
+### Traininn with TF-IDF
 
 
+### Prepare one single matrix with label in first column and features in other columns
+
+    Use cbind to add in column the labels (spam, ham)
+    transform in a dataframe
+    the  tokens for the dataframe may not be compatible to be column names
+    transform names in compatible names
+
+```{r}
+train.tokens.df <- cbind( label = train$label, as.data.frame(train.tokens.tfidf))
+dim(train.tokens.df)
+names(train.tokens.df)[c(146, 148, 235, 238)]
+
+names(train.tokens.df) <- make.names(names(train.tokens.df))
+
+```
+
+
+### Train  model
+
+#### Create stratified folds for cross-validation repeated 3 times
+
+```{r}
+set.seed(48743)
+cv.folds <- createMultiFolds(train$label, k=10, times = 3)
+
+cv.cntrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, index = cv.folds)
+```
+
+
+
+
+```{r}
+
+# install.packages("doSNOW")
+library(doSNOW)
+
+start.time <- Sys.time()
+cl <- makeCluster(5, type = "SOCK")
+registerDoSNOW(cl)
+
+rpart.cv.1 <- train(label ~ . , data = train.tokens.df, method = "rpart",
+                    trControl = cv.cntrl, tuneLength = 7)
+stopCluster(cl)
+total.time <- Sys.time() - start.time
+total.time
+```
+
+
+## N-Grams model
+
+### Create n-grams tokens : add bigrams to our feature matrix
+
+```{r}
+head(train.tokens)
+train.tokens <- tokens_ngrams(train.tokens, n = 1:2)
+head(train.tokens)
+```
+
+
+
+
+### Create Document Frequency Matrix and tf-idf for bigrams matrix
+
+```{r}
+train.tokens.dfm <- dfm(train.tokens, tolower = FALSE)
+train.tokens.matrix <- as.matrix(train.tokens.dfm)
+head(train.tokens.matrix[1:6, 1:50])
+
+dim(train.tokens.matrix)
+colnames(train.tokens.matrix)[1:50]
+
+term.frequency <- function (row) {
+  row / sum (row)
+}
+
+
+inverse.doc.freq <- function(col) {
+  doc.size <- length (col)
+  doc.term.count <- length(which(col > 0))
+  log10(doc.size/doc.term.count)
+}
+
+tf.idf <- function (tf, idf) {
+  tf * idf
+}
+
+train.tokens.tf <- apply(train.tokens.matrix, 1, term.frequency)
+
+train.tokens.idf <- apply(train.tokens.matrix, 2, inverse.doc.freq)
+str(train.tokens.idf)
+
+train.tokens.tfidf <- apply(train.tokens.tf, 2, tf.idf, idf = train.tokens.idf)
+dim(train.tokens.tfidf)
+# View'train.tokens.tfidf[1:25,1:25])
+
+train.tokens.tfidf <- t(train.tokens.tfidf)
+dim(train.tokens.tfidf)
+```
+
+```{r}
+incomplete.cases <- which(!complete.cases(train.tokens.tfidf))
+train$text[incomplete.cases]
+
+train.tokens.tfidf[incomplete.cases,] <- rep(0.0, ncol(train.tokens.tfidf))
+dim(train.tokens.tfidf)
+length(which(!complete.cases(train.tokens.tfidf)))
+
+```
+
+
+```{r}
+train.tokens.df <- cbind( label = train$label, as.data.frame(train.tokens.tfidf))
+dim(train.tokens.df)
+# names(train.tokens.df)[c(146, 148, 235, 238)]
+
+names(train.tokens.df) <- make.names(names(train.tokens.df))
+
+```
+
+#### Create stratified folds for cross-validation repeated 3 times
+
+```{r}
+set.seed(48743)
+cv.folds <- createMultiFolds(train$label, k=10, times = 3)
+
+cv.cntrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, index = cv.folds)
+```
+
+
+
+
+```{r}
+
+# install.packages("doSNOW")
+library(doSNOW)
+
+start.time <- Sys.time()
+cl <- makeCluster(5, type = "SOCK")
+registerDoSNOW(cl)
+
+rpart.cv.1 <- train(label ~ . , data = train.tokens.df, method = "rpart",
+                    trControl = cv.cntrl, tuneLength = 7)
+stopCluster(cl)
+total.time <- Sys.time() - start.time
+total.time
+```
