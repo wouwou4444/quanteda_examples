@@ -322,6 +322,52 @@ head(train.tokens.matrix[1:6, 1:50])</code></pre>
 ##   text6  0  0   0   0    0    0 0   0      0    0</code></pre>
 <pre class="r"><code>dim(train.tokens.matrix)</code></pre>
 <pre><code>## [1] 3901 5742</code></pre>
+<pre class="r"><code>colnames(train.tokens.matrix)[1:50]</code></pre>
+<pre><code>##  [1] &quot;go&quot;      &quot;jurong&quot;  &quot;point&quot;   &quot;crazi&quot;   &quot;avail&quot;   &quot;bugi&quot;    &quot;n&quot;      
+##  [8] &quot;great&quot;   &quot;world&quot;   &quot;la&quot;      &quot;e&quot;       &quot;buffet&quot;  &quot;cine&quot;    &quot;got&quot;    
+## [15] &quot;amor&quot;    &quot;wat&quot;     &quot;u&quot;       &quot;dun&quot;     &quot;say&quot;     &quot;earli&quot;   &quot;hor&quot;    
+## [22] &quot;c&quot;       &quot;alreadi&quot; &quot;nah&quot;     &quot;think&quot;   &quot;goe&quot;     &quot;usf&quot;     &quot;live&quot;   
+## [29] &quot;around&quot;  &quot;though&quot;  &quot;freemsg&quot; &quot;hey&quot;     &quot;darl&quot;    &quot;week&quot;    &quot;now&quot;    
+## [36] &quot;word&quot;    &quot;back&quot;    &quot;like&quot;    &quot;fun&quot;     &quot;still&quot;   &quot;tb&quot;      &quot;ok&quot;     
+## [43] &quot;xxx&quot;     &quot;std&quot;     &quot;chgs&quot;    &quot;send&quot;    &quot;å&quot;       &quot;rcv&quot;     &quot;winner&quot; 
+## [50] &quot;valu&quot;</code></pre>
+</div>
+<div id="model" class="section level3">
+<h3>Model</h3>
+</div>
+<div id="prepare-one-single-matrix-with-label-in-first-column-and-features-in-other-columns" class="section level3">
+<h3>Prepare one single matrix with label in first column and features in other columns</h3>
+<pre><code>Use cbind to add in column the labels (spam, ham)
+transform in a dataframe
+the  tokens for the dataframe may not be compatible to be column names
+transform names in compatible names</code></pre>
+<pre class="r"><code>train.tokens.df &lt;- cbind( label = train$label, convert(train.tokens.dfm, to = &quot;data.frame&quot;))
+dim(train.tokens.df)</code></pre>
+<pre><code>## [1] 3901 5744</code></pre>
+<pre class="r"><code>names(train.tokens.df)[c(146, 148, 235, 238)]</code></pre>
+<pre><code>## [1] &quot;try:wal&quot; &quot;4txt&quot;    &quot;2nd&quot;     &quot;8am&quot;</code></pre>
+<pre class="r"><code>names(train.tokens.df) &lt;- make.names(names(train.tokens.df))</code></pre>
+</div>
+<div id="train-the-first-model" class="section level3">
+<h3>Train the first model</h3>
+</div>
+<div id="section" class="section level3">
+<h3></h3>
+<pre class="r"><code>set.seed(48743)
+cv.folds &lt;- createMultiFolds(train$label, k = 10, times = 3)
+
+# install.packages(&quot;doSNOW&quot;)
+library(doSNOW)</code></pre>
+<pre><code>## Warning: package 'doSNOW' was built under R version 3.5.1</code></pre>
+<pre><code>## Loading required package: foreach</code></pre>
+<pre><code>## Warning: package 'foreach' was built under R version 3.5.1</code></pre>
+<pre><code>## Loading required package: iterators</code></pre>
+<pre><code>## Warning: package 'iterators' was built under R version 3.5.1</code></pre>
+<pre><code>## Loading required package: snow</code></pre>
+<pre><code>## Warning: package 'snow' was built under R version 3.5.1</code></pre>
+<pre class="r"><code>start.time &lt;- Sys.time()
+# cl &lt;- makeCluster(4, type = &quot;SOCK&quot;)
+# registerDoSNOW(cl)</code></pre>
 </div>
 </div>
 

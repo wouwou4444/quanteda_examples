@@ -357,3 +357,99 @@ dim(train.tokens.matrix)
 ## [1] 3901 5742
 ```
 
+```r
+colnames(train.tokens.matrix)[1:50]
+```
+
+```
+##  [1] "go"      "jurong"  "point"   "crazi"   "avail"   "bugi"    "n"      
+##  [8] "great"   "world"   "la"      "e"       "buffet"  "cine"    "got"    
+## [15] "amor"    "wat"     "u"       "dun"     "say"     "earli"   "hor"    
+## [22] "c"       "alreadi" "nah"     "think"   "goe"     "usf"     "live"   
+## [29] "around"  "though"  "freemsg" "hey"     "darl"    "week"    "now"    
+## [36] "word"    "back"    "like"    "fun"     "still"   "tb"      "ok"     
+## [43] "xxx"     "std"     "chgs"    "send"    "å"       "rcv"     "winner" 
+## [50] "valu"
+```
+
+### Model
+
+
+### Prepare one single matrix with label in first column and features in other columns
+
+    Use cbind to add in column the labels (spam, ham)
+    transform in a dataframe
+    the  tokens for the dataframe may not be compatible to be column names
+    transform names in compatible names
+
+
+```r
+train.tokens.df <- cbind( label = train$label, convert(train.tokens.dfm, to = "data.frame"))
+dim(train.tokens.df)
+```
+
+```
+## [1] 3901 5744
+```
+
+```r
+names(train.tokens.df)[c(146, 148, 235, 238)]
+```
+
+```
+## [1] "try:wal" "4txt"    "2nd"     "8am"
+```
+
+```r
+names(train.tokens.df) <- make.names(names(train.tokens.df))
+```
+
+
+### Train the first model
+
+###
+
+
+
+```r
+set.seed(48743)
+cv.folds <- createMultiFolds(train$label, k = 10, times = 3)
+
+# install.packages("doSNOW")
+library(doSNOW)
+```
+
+```
+## Warning: package 'doSNOW' was built under R version 3.5.1
+```
+
+```
+## Loading required package: foreach
+```
+
+```
+## Warning: package 'foreach' was built under R version 3.5.1
+```
+
+```
+## Loading required package: iterators
+```
+
+```
+## Warning: package 'iterators' was built under R version 3.5.1
+```
+
+```
+## Loading required package: snow
+```
+
+```
+## Warning: package 'snow' was built under R version 3.5.1
+```
+
+```r
+start.time <- Sys.time()
+# cl <- makeCluster(4, type = "SOCK")
+# registerDoSNOW(cl)
+```
+

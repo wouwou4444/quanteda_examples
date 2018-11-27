@@ -161,7 +161,7 @@ cv.cntrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3, index 
 library(doSNOW)
 
 start.time <- Sys.time()
-cl <- makeCluster(5, type = "SOCK")
+cl <- makeCluster(3, type = "SOCK")
 registerDoSNOW(cl)
 
 rpart.cv.1 <- train(label ~ . , data = train.tokens.df, method = "rpart",
@@ -180,7 +180,42 @@ term.frequency <- function (row) {
 }
 train.tokens.tf <- apply(train.tokens.matrix, 1, term.frequency)
 
+
+inverse.doc.freq <- function(col) {
+  doc.size <- length (col)
+  doc.term.count <- length(which(col > 0))
+  log10(doc.size/doc.term.count)
+}
+
+tf.idf <- function (tf, idf) {
+  tf * idf
+}
+
+train.tokens.idf <- apply(train.tokens.matrix, 2, inverse.doc.freq)
+str(train.tokens.idf)
+
+train.tokens.tfidf <- apply(train.tokens.tf, 2, tf.idf, idf = train.tokens.idf)
+dim(train.tokens.tfidf)
+# View'train.tokens.tfidf[1:25,1:25])
+
+train.tokens.tfidf <- t(train.tokens.tfidf)
+dim(train.tokens.tfidf)
+# View'train.tokens.tfidf[1:25,1:25])
+
+
 ```
 
+```{r}
+incomplete.cases <- which(!complete.cases(train.tokens.tfidf))
+train$text[incomplete.cases]
+
+train.tokens.tfidf[incomplete.cases,] <- rep(0.0, ncol(train.tokens.tfidf))
+dim(train.tokens.tfidf)
+length(which(!complete.cases(train.tokens.tfidf)))
+
+```
+
+
+### Check that there is no degenerative cases
 
 
